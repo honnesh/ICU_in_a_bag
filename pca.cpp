@@ -1,8 +1,15 @@
 #include "mbed.h"
 #include "pca.h"
 
+// THis is C, not C++. Normally, if you want to use pointers to functions, you
+// express it instead using inheritance.
+// Moreover, I can't tell what the code is trying to achieve, much less whether it achieves it. 
+// Please check your design documents into the repository. 
+// Perhaps we should try to meet during office hours Tuesday.
+
 Serial pc(USBTX, USBRX);
 
+// 
 /* ------------- ISRs ---------------------------------- */
 void DoorClosed()
 {

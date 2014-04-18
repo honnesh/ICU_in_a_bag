@@ -1,3 +1,5 @@
+// Don't use #define in C++ programs. Make these typed const members
+
 #define conc1                   0.5
 #define conc2                   5
 #define conc3                   10
