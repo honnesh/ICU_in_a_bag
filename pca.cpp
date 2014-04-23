@@ -131,6 +131,7 @@ void PCA_lockout()
     _(ensures Event is TIMEOUT)
     
      pca_lockout_timer.detach();
+     bolus.rise(&Bolus);        //Enable load Interrupt
     (smart_pca->CurrentState)(smart_pca,TIMEOUT);
 }
 
@@ -180,7 +181,7 @@ void stop_motor()
 /* ------------- STATE MACHINE ------------------------- */
 void OFFSTATE(TStateMachine *state, Event input)
 {
-    _(ensures \new CurrentState == CONC1 iff Event == ON && door open && Syringe placed && level high)
+    _(ensures CurrentState == CONC1 iff Event == ON && door open && Syringe placed && level high)
 
     switch(input)
     {
@@ -202,12 +203,12 @@ void OFFSTATE(TStateMachine *state, Event input)
 
 void CONC1(TStateMachine *state, Event input)
 {
-    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
-    _(ensures \new CurrentState = MODE_SELECT_PCA &&  user_input.drug_concentration iff Event = ENTER)
-    _(ensures \new CurrentState = CONC3 iff Event = UP)
-    _(ensures \new CurrentState = CONC2 iff Event = DOWN)
-    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = CONC1 iff Event = SYRINGE_ABSENT)
-    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = CONC1 iff Event = LEVEL_LOW)
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == MODE_SELECT_PCA && user_input.drug_concentration = conc1 iff Event = ENTER)
+    _(ensures CurrentState == CONC3 iff Event = UP)
+    _(ensures CurrentState == CONC2 iff Event = DOWN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState = CONC1 iff Event = SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState = CONC1 iff Event = LEVEL_LOW)
     
     switch(input)
     {
@@ -242,12 +243,12 @@ void CONC1(TStateMachine *state, Event input)
 
 void CONC2(TStateMachine *state, Event input)
 {
-    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
-    _(ensures \new CurrentState = MODE_SELECT_PCA iff Event = ENTER)
-    _(ensures \new CurrentState = CONC1 iff Event = UP)
-    _(ensures \new CurrentState = CONC3 iff Event = DOWN)
-    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = CONC2 iff Event = SYRINGE_ABSENT)
-    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = CONC2 iff Event = LEVEL_LOW)
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == MODE_SELECT_PCA && user_input.drug_concentration = conc2 iff Event = ENTER)
+    _(ensures CurrentState == CONC1 iff Event = UP)
+    _(ensures CurrentState == CONC3 iff Event = DOWN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState = CONC2 iff Event = SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState = CONC2 iff Event = LEVEL_LOW)
 
     switch(input)
     {
@@ -283,12 +284,12 @@ void CONC2(TStateMachine *state, Event input)
 
 void CONC3(TStateMachine    *state, Event input)
 {
-    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
-    _(ensures \new CurrentState = MODE_SELECT_PCA iff Event = ENTER)
-    _(ensures \new CurrentState = CONC2 iff Event = UP)
-    _(ensures \new CurrentState = CONC1 iff Event = DOWN)
-    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = CONC3 iff Event = SYRINGE_ABSENT)
-    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = CONC3 iff Event = LEVEL_LOW)
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == MODE_SELECT_PCA && user_input.drug_concentration = conc3 iff Event = ENTER)
+    _(ensures CurrentState == CONC2 iff Event = UP)
+    _(ensures CurrentState == CONC1 iff Event = DOWN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState = CONC3 iff Event = SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState = CONC3 iff Event = LEVEL_LOW)
     
     switch(input)
     {
@@ -324,14 +325,13 @@ void CONC3(TStateMachine    *state, Event input)
 
 void MODE_SELECT_PCA(TStateMachine  *state, Event input)
 {
-    _(requires user_input.drug_concentration !=0)
-    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
-    _(ensures \new CurrentState = CONC1 iff Event = NO)
-    _(ensures \new CurrentState = PCA_DOSAGE iff Event = ENTER)
-    _(ensures \new CurrentState = MODE_SELECT_PCA_CONT iff Event = UP)
-    _(ensures \new CurrentState = MODE_SELECT_CONT iff Event = DOWN)
-    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = MODE_SELECT_PCA iff Event = SYRINGE_ABSENT)
-    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = MODE_SELECT_PCA iff Event = LEVEL_LOW)
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == CONC1 iff Event = NO)
+    _(ensures CurrentState == PCA_DOSAGE && user_input.mode_selected = 1 iff Event = ENTER)
+    _(ensures CurrentState == MODE_SELECT_PCA_CONT iff Event = UP)
+    _(ensures CurrentState == MODE_SELECT_CONT iff Event = DOWN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState = MODE_SELECT_PCA iff Event = SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState = MODE_SELECT_PCA iff Event = LEVEL_LOW)
 
     switch(input)
     {
@@ -368,13 +368,13 @@ void MODE_SELECT_PCA(TStateMachine  *state, Event input)
 
 void MODE_SELECT_CONT(TStateMachine *state, Event input)
 {
-    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
-    _(ensures \new CurrentState = CONC1 iff Event = NO)
-    _(ensures \new CurrentState = CONT_RATE iff Event = ENTER)
-    _(ensures \new CurrentState = MODE_SELECT_PCA iff Event = UP)
-    _(ensures \new CurrentState = MODE_SELECT_PCA_CONT iff Event = DOWN)
-    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = MODE_SELECT_CONT iff Event = SYRINGE_ABSENT)
-    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = MODE_SELECT_CONT iff Event = LEVEL_LOW)
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == CONC1 iff Event = NO)
+    _(ensures CurrentState == CONT_RATE && user_input.mode_selected = 2 iff Event = ENTER)
+    _(ensures CurrentState == MODE_SELECT_PCA iff Event = UP)
+    _(ensures CurrentState == MODE_SELECT_PCA_CONT iff Event = DOWN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState = MODE_SELECT_CONT iff Event = SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState = MODE_SELECT_CONT iff Event = LEVEL_LOW)
 
     switch(input)
     {
@@ -411,7 +411,14 @@ void MODE_SELECT_CONT(TStateMachine *state, Event input)
 
 void MODE_SELECT_PCA_CONT(TStateMachine *state, Event input)
 {
-    pc.printf("MODE_SELECT_CONT\n\r");
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == CONC1 iff Event = NO)
+    _(ensures CurrentState == PCA_CONT_RATE && user_input.mode_selected = 3 iff Event = ENTER)
+    _(ensures CurrentState == MODE_SELECT_CONT iff Event = UP)
+    _(ensures CurrentState == MODE_SELECT_PCA iff Event = DOWN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState = MODE_SELECT_PCA_CONT iff Event = SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState = MODE_SELECT_PCA_CONT iff Event = LEVEL_LOW)
+    
     switch(input)
     {
         case OFF:               //Display(0) - Blank display
@@ -447,7 +454,14 @@ void MODE_SELECT_PCA_CONT(TStateMachine *state, Event input)
 
 void PCA_DOSAGE(TStateMachine   *state, Event input)
 {
-    pc.printf("PCA_DOSAGE\n\r");
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == MODE_SELECT_PCA iff Event = NO)
+    _(ensures CurrentState == PCA_LOCKOUT && (0 < user_input.pca_dosage < 100) iff Event = ENTER)
+    _(ensures CurrentState == PCA_DOSAGE && user_input.pca_dosage =\old user_input.pca_dosage + 0.1 iff Event = UP)
+    _(ensures CurrentState == PCA_DOSAGE && user_input.pca_dosage =\old user_input.pca_dosage - 0.1 iff Event = DOWN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState = PCA_DOSAGE iff Event = SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState = PCA_DOSAGE iff Event = LEVEL_LOW)
+    
     switch(input)
     {
         case OFF:                //Display(0) - Blank display
@@ -488,7 +502,14 @@ void PCA_DOSAGE(TStateMachine   *state, Event input)
 
 void PCA_LOCKOUT(TStateMachine  *state, Event input)
 {
-    pc.printf("PCA_LOCKOUT\n\r");
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == PCA_DOSAGE iff Event = NO)
+    _(ensures CurrentState == PCA_READY && (0 < user_input.pca_lockout < 100) iff Event = ENTER)
+    _(ensures CurrentState == PCA_LOCKOUT && user_input.pca_lockout =\old user_input.pca_lockout + 1 iff Event = UP)
+    _(ensures CurrentState == PCA_LOCKOUT && user_input.pca_lockout =\old user_input.pca_lockout - 1 iff Event = DOWN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState = PCA_LOCKOUT iff Event = SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState = PCA_LOCKOUT iff Event = LEVEL_LOW)
+   
     switch(input)
     {
         case OFF:               //Display(0) - Blank Screen
@@ -527,7 +548,12 @@ void PCA_LOCKOUT(TStateMachine  *state, Event input)
 
 void PCA_IDLE(TStateMachine *state, Event input)
 {
-    pc.printf("PCA_IDLE\n\r");
+    _(ensures CurrentState == OFFSTATE iff Event == OFF)
+    _(ensures CurrentState == \old CurrentState iff Event = LOAD)
+    _(ensures CurrentState == PCA_READY iff Event = TIMEOUT)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState = PCA_IDLE iff Event = SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState = PCA_IDLE iff Event = LEVEL_LOW)
+
     switch(input)
     {
         case OFF:               //Display(0) - Blank Screen
@@ -557,29 +583,31 @@ void PCA_IDLE(TStateMachine *state, Event input)
 
 void PCA_READY(TStateMachine    *state, Event input)
 {
-    pc.printf("PCA_READY\n\r");
+    _(ensures CurrentState == OFFSTATE iff Event == OFF)
+    _(ensures CurrentState == PCA_IDLE iff Event == LOAD || Event == BOLUS)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState == PCA_READY iff Event == SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState == PCA_READY iff Event == LEVEL_LOW)
+
     switch(input)
     {
         case OFF:               //Display(0) - Blank Screen
                                 state->CurrentState=OFFSTATE;
                                 break;
         case BOLUS:             //Display() -  Administering Bolus
-                                load.rise(NULL);
-                                bolus.rise(NULL);
+                                load.rise(NULL);        //Disable load Interrupt
+                                bolus.rise(NULL);       //Disable bolus Interrupt
                                 start_motor(user_input); //time to be calculated after dosage is entered
                                 pca_lockout_timer.attach(&PCA_lockout,user_input.pca_lockout*60);
-                                bolus.rise(&Bolus);
-                                load.rise(&Load);
                                 state->CurrentState=PCA_IDLE;
+                                load.rise(&Load);       //Enable load Interrupt
                                 break;
         case LOAD:              //Display() - Loading Dosage
                                 load.rise(NULL);
                                 bolus.rise(NULL);
                                 start_motor(user_input); //time to be calculated after dosage is entered
                                 pca_lockout_timer.attach(&PCA_lockout,user_input.pca_lockout*60);
-                                bolus.rise(&Bolus);
-                                load.rise(&Load);
                                 state->CurrentState=PCA_IDLE;
+                                load.rise(&Load);                                
                                 break;
         case SYRINGE_ABSENT:    stop_motor();
                                 //Display(2) - Syringe Absent!!
@@ -596,7 +624,13 @@ void PCA_READY(TStateMachine    *state, Event input)
 
 void CONT_RATE(TStateMachine    *state, Event input)
 {
-    pc.printf("CONT_RATE\n\r");
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == MODE_SELECT_PCA iff Event == NO)
+    _(ensures CurrentState == CONT_READY && 0<=user_input.cont_rate<=100 iff Event == ENTER)
+    _(ensures CurrentState == CONT_RATE && user_input.cont_rate == \old user_input.cont_rate + 0.5 iff Event == UP)
+    _(ensures CurrentState == CONT_RATE && user_input.cont_rate == \old user_input.cont_rate - 0.5 iff Event == DOWN)    
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState == CONT_RATE iff Event == SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState == CONT_RATE iff Event == LEVEL_LOW)
     switch(input)
     {
         case OFF:               //Display(0) - Blank Screen
@@ -636,6 +670,12 @@ void CONT_RATE(TStateMachine    *state, Event input)
 
 void CONT_READY(TStateMachine   *state, Event input)
 {
+    _(ensures CurrentState == OFFSTATE iff Event == OFF)
+    _(ensures CurrentState == OFFSTATE iff Event == DOOR_CLOSED && motor finished running)
+    _(ensures CurrentState == ERROR_DOOR_STATE && PreviousState == CONT_READY iff Event == DOOR_OPEN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState == CONT_READY iff Event == SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState == CONT_READY iff Event == LEVEL_LOW)
+    
     switch(input)
     {
         case OFF:               //Display(0) - Blank Screen
@@ -645,7 +685,6 @@ void CONT_READY(TStateMachine   *state, Event input)
                                 start_motor(user_input);
                                 //Display(0) - Blank Screen
                                 state->CurrentState=OFFSTATE;
-                                //state->CurrentState=CONT_DELIVERY;
                                 break;
         case DOOR_OPEN:         //Display() - Door Open
                                 stop_motor();
@@ -667,6 +706,14 @@ void CONT_READY(TStateMachine   *state, Event input)
 
 void PCA_CONT_RATE(TStateMachine    *state, Event input)
 {
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == MODE_SELECT_PCA iff Event == NO)
+    _(ensures CurrentState == PCA_CONT_BOLUS_DOSAGE && 0<=user_input.cont_rate<=100 iff Event == ENTER)
+    _(ensures CurrentState == PCA_CONT_RATE && user_input.cont_rate == \old user_input.cont_rate + 0.1 iff Event == UP)
+    _(ensures CurrentState == PCA_CONT_RATE && user_input.cont_rate == \old user_input.cont_rate - 0.1 iff Event == DOWN)    
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState == PCA_CONT_RATE iff Event == SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState == PCA_CONT_RATE iff Event == LEVEL_LOW)
+    
     switch(input)
     {
         case OFF:               //Display(0) - Blank Screen
@@ -707,6 +754,14 @@ void PCA_CONT_RATE(TStateMachine    *state, Event input)
 
 void PCA_CONT_BOLUS_DOSAGE(TStateMachine    *state, Event input)
 {
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == PCA_CONT_RATE iff Event == NO)
+    _(ensures CurrentState == PCA_CONT_LOCKOUT && 0<=user_input.cont_rate<=100 iff Event == ENTER)
+    _(ensures CurrentState == PCA_CONT_BOLUS_DOSAGE && user_input.cont_rate == \old user_input.cont_rate + 0.1 iff Event == UP)
+    _(ensures CurrentState == PCA_CONT_BOLUS_DOSAGE && user_input.cont_rate == \old user_input.cont_rate - 0.1 iff Event == DOWN)    
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState == PCA_CONT_BOLUS_DOSAGE iff Event == SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState == PCA_CONT_BOLUS_DOSAGE iff Event == LEVEL_LOW)
+    
     switch(input)
     {
         case OFF:               //Display(0) - Blank Screen
@@ -747,6 +802,14 @@ void PCA_CONT_BOLUS_DOSAGE(TStateMachine    *state, Event input)
 
 void PCA_CONT_LOCKOUT(TStateMachine *state, Event input)
 {
+    _(ensures CurrentState == OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures CurrentState == PCA_CONT_BOLUS_DOSAGE iff Event == NO)
+    _(ensures CurrentState == PCA_CONT_READY && (0 < user_input.pca_cont_lockout < 100) iff Event == ENTER)
+    _(ensures CurrentState == PCA_CONT_LOCKOUT && user_input.pca_cont_lockout == \old user_input.pca_cont_lockout + 1 iff Event == UP)
+    _(ensures CurrentState == PCA_CONT_LOCKOUT && user_input.pca_cont_lockout == \old user_input.pca_cont_lockout - 1 iff Event == DOWN)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState == PCA_CONT_LOCKOUT iff Event == SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState == PCA_CONT_LOCKOUT iff Event == LEVEL_LOW)
+    
     switch(input)
     {
         case OFF:               //Display(0) - Blank Screen
@@ -786,6 +849,10 @@ void PCA_CONT_LOCKOUT(TStateMachine *state, Event input)
 
 void PCA_CONT_READY(TStateMachine   *state, Event input)
 {
+        _(ensures CurrentState == OFFSTATE iff Event == OFF)
+    _(ensures CurrentState == PCA_IDLE iff Event == LOAD || Event == BOLUS)
+    _(ensures CurrentState == ERROR_SYRINGE_STATE && PreviousState == PCA_READY iff Event == SYRINGE_ABSENT)
+    _(ensures CurrentState == ERROR_LEVEL_STATE && PreviousState == PCA_READY iff Event == LEVEL_LOW)
     switch(input)
     {
         case OFF:               //Display(0) - Blank Screen
