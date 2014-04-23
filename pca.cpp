@@ -1,11 +1,16 @@
 #include "mbed.h"
 #include "pca.h"
 
+#define _(x)
+
 Serial pc(USBTX, USBRX);
 
 /* ------------- ISRs ---------------------------------- */
 void DoorClosed()
 {
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is DOOR_CLOSED iff CurrentState != ERROR_DOOR_STATE)
+
     sensorstatus.doorclosed=true;
     if(smart_pca->CurrentState != ERROR_DOOR_STATE)
         (smart_pca->CurrentState)(smart_pca,DOOR_CLOSED);
@@ -13,89 +18,127 @@ void DoorClosed()
 
 void DoorOpen()
 {
+    _(requires falling edge on interrupt pin)
+    _(ensures Event is DOOR_OPEN)
+    
     sensorstatus.doorclosed=false;
     (smart_pca->CurrentState)(smart_pca,DOOR_OPEN);
 }
 
 void SyringePlaced()
 {
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is SYRINGE_PRESENT)    
+    
     sensorstatus.syringeplaced=true;
-    pc.printf("SYRINGE INSERTED\n\r");
     (smart_pca->CurrentState)(smart_pca,SYRINGE_PRESENT);
 }
 
 void SyringeAbsent()
 {
+    _(requires falling edge on interrupt pin)
+    _(ensures Event is SYRINGE_ABSENT)
+    
     sensorstatus.syringeplaced=false;  
-    pc.printf("SYRINGE REMOVED\n\r"); 
     (smart_pca->CurrentState)(smart_pca,SYRINGE_ABSENT);
 }
 
 void LevelHigh()
 {
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is LEVEL_HIGH)
+    
     sensorstatus.levelhigh=true;
-    pc.printf("LEVEL WENT LOW\n\r");
     (smart_pca->CurrentState)(smart_pca,LEVEL_HIGH);
 }
 
 void LevelLow()
 {
+    _(requires falling edge on interrupt pin)
+    _(ensures Event is LEVEL_LOW)
+    
     sensorstatus.levelhigh=false;
-    pc.printf("LEVEL WENT HIGH\n\r");
     (smart_pca->CurrentState)(smart_pca,LEVEL_LOW);
 }
 
 void On()
 {
-    //pc.printf("ON button interrupt detected\n\r");
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is ON)
+    
     (smart_pca->CurrentState)(smart_pca,ON);
 }
 
 void Off()
 {
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is OFF)
+    
     (smart_pca->CurrentState)(smart_pca,OFF);
 }
 
 void No()
 {
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is NO)    
+    
     (smart_pca->CurrentState)(smart_pca,NO);
 }
 
 void Enter()
 {
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is ENTER)
+    
     (smart_pca->CurrentState)(smart_pca,ENTER);
 }
 
 void Up()
 {
-    //pc.printf("UP\n\r");
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is UP)
+    
     (smart_pca->CurrentState)(smart_pca,UP);
 }
 
 void Down()
 {
-    //pc.printf("DOWN\n\r");
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is DOWN)
+    
     (smart_pca->CurrentState)(smart_pca,DOWN);
 }
 
 void Bolus()
 {
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is BOLUS)
+    
     (smart_pca->CurrentState)(smart_pca,BOLUS);
 }
 
 void Load()
 {
+    _(requires rising edge on interrupt pin)
+    _(ensures Event is LOAD)
+    
     (smart_pca->CurrentState)(smart_pca,LOAD);
 }
 
 void PCA_lockout()
 {
+    _(requires timeout of pca_lockout_timer)
+    _(ensures Event is TIMEOUT)
+    
      pca_lockout_timer.detach();
     (smart_pca->CurrentState)(smart_pca,TIMEOUT);
 }
 
 void PCA_cont_lockout()
 {
+    _(requires timeout of pca_cont_lockout_timer)
+    _(ensures Event is TIMEOUT)    
+    
      pca_cont_lockout_timer.detach();
     (smart_pca->CurrentState)(smart_pca,TIMEOUT);
 }
@@ -137,24 +180,19 @@ void stop_motor()
 /* ------------- STATE MACHINE ------------------------- */
 void OFFSTATE(TStateMachine *state, Event input)
 {
-    pc.printf("\n\r");
+    _(ensures \new CurrentState == CONC1 iff Event == ON && door open && Syringe placed && level high)
+
     switch(input)
     {
         case ON:        if(sensorstatus.doorclosed)
-                            pc.printf("DOOR CLOSE\n\r");
                             //Display(1)- pc.printf("DOOR OPEN\n");
                         else if(!sensorstatus.syringeplaced)
-                            pc.printf("SYRINGE ABSENT\n\r");
                             //Display(2)- Syringe Absent!!
                         else if(!sensorstatus.levelhigh)
-                            pc.printf("LEVEL LOW\n\r");
                             //Display(3)- Level low!!
                         else
                         {
-                            //Display(4)- 
-                            pc.printf("Welcome to the actual SMART PCA\n\r");
                             //Display(5)- Select concentration menu with 1st option highlighted
-                            pc.printf("*CONC1\tCONC2\tCONC3\n\r");
                             state->CurrentState=CONC1;
                         }
                         break;
@@ -162,8 +200,15 @@ void OFFSTATE(TStateMachine *state, Event input)
     }               
 }
 
-void CONC1(TStateMachine    *state, Event input)
+void CONC1(TStateMachine *state, Event input)
 {
+    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures \new CurrentState = MODE_SELECT_PCA &&  user_input.drug_concentration iff Event = ENTER)
+    _(ensures \new CurrentState = CONC3 iff Event = UP)
+    _(ensures \new CurrentState = CONC2 iff Event = DOWN)
+    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = CONC1 iff Event = SYRINGE_ABSENT)
+    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = CONC1 iff Event = LEVEL_LOW)
+    
     switch(input)
     {
         case OFF:               //Display(0) - Blank display
@@ -195,8 +240,14 @@ void CONC1(TStateMachine    *state, Event input)
     }
 }
 
-void CONC2(TStateMachine    *state, Event input)
+void CONC2(TStateMachine *state, Event input)
 {
+    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures \new CurrentState = MODE_SELECT_PCA iff Event = ENTER)
+    _(ensures \new CurrentState = CONC1 iff Event = UP)
+    _(ensures \new CurrentState = CONC3 iff Event = DOWN)
+    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = CONC2 iff Event = SYRINGE_ABSENT)
+    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = CONC2 iff Event = LEVEL_LOW)
 
     switch(input)
     {
@@ -232,6 +283,13 @@ void CONC2(TStateMachine    *state, Event input)
 
 void CONC3(TStateMachine    *state, Event input)
 {
+    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures \new CurrentState = MODE_SELECT_PCA iff Event = ENTER)
+    _(ensures \new CurrentState = CONC2 iff Event = UP)
+    _(ensures \new CurrentState = CONC1 iff Event = DOWN)
+    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = CONC3 iff Event = SYRINGE_ABSENT)
+    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = CONC3 iff Event = LEVEL_LOW)
+    
     switch(input)
     {
         case OFF:               //Display(0) - Blank display
@@ -266,7 +324,15 @@ void CONC3(TStateMachine    *state, Event input)
 
 void MODE_SELECT_PCA(TStateMachine  *state, Event input)
 {
-    pc.printf("MODE_SELECT_PCA\n\r");
+    _(requires user_input.drug_concentration !=0)
+    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures \new CurrentState = CONC1 iff Event = NO)
+    _(ensures \new CurrentState = PCA_DOSAGE iff Event = ENTER)
+    _(ensures \new CurrentState = MODE_SELECT_PCA_CONT iff Event = UP)
+    _(ensures \new CurrentState = MODE_SELECT_CONT iff Event = DOWN)
+    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = MODE_SELECT_PCA iff Event = SYRINGE_ABSENT)
+    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = MODE_SELECT_PCA iff Event = LEVEL_LOW)
+
     switch(input)
     {
         case OFF:               //Display(0) - Blank display
@@ -302,7 +368,14 @@ void MODE_SELECT_PCA(TStateMachine  *state, Event input)
 
 void MODE_SELECT_CONT(TStateMachine *state, Event input)
 {
-    pc.printf("MODE_SELECT_CONT\n\r");
+    _(ensures \new CurrentState = OFFSTATE iff Event == OFF || Event == DOOR_CLOSED)
+    _(ensures \new CurrentState = CONC1 iff Event = NO)
+    _(ensures \new CurrentState = CONT_RATE iff Event = ENTER)
+    _(ensures \new CurrentState = MODE_SELECT_PCA iff Event = UP)
+    _(ensures \new CurrentState = MODE_SELECT_PCA_CONT iff Event = DOWN)
+    _(ensures \new CurrentState = ERROR_SYRINGE_STATE && \new PreviousState = MODE_SELECT_CONT iff Event = SYRINGE_ABSENT)
+    _(ensures \new CurrentState = ERROR_LEVEL_STATE && \new PreviousState = MODE_SELECT_CONT iff Event = LEVEL_LOW)
+
     switch(input)
     {
         case OFF:               //Display(0) - Blank display
@@ -855,19 +928,41 @@ void ERROR_LEVEL_STATE  (TStateMachine  *state, Event input)
     }
 }
 /* -------------END OF STATE MACHINE ------------------------- */
-// Function Call to initiallize a State Machine
+
+
+/* In main function:
+        1) initiallize the State Machine
+        2) Check initial sensor status
+        3) Assign Interrupt service routines to pins.
+*/ 
 
 int main()
 {
+    _(requires door sensor connected to pin 5 (p5))
+    _(requires syringe sensor connected to pin 6 (p6))
+    _(requires level sensor connected to pin 7 (p7))
+    _(requires On button of keypad connected to pin 8 (p8))
+    _(requires Off button of keypad connected to pin 9 (p9))
+    _(requires Back button of keypad connected to pin 10 (p10))
+    _(requires Enter button of keypad connected to pin 11 (p11))
+    _(requires Up button of keypad connected to pin 12 (p12))
+    _(requires Down button of keypad connected to pin 13 (p13))
+    _(requires Bolus input connected to pin 14 (p14))
+    _(requires load button of keypad connected to pin 15 (p15))
     
-    wait(2);
+    _(ensures sensorstatus.doorclosed == d_c)
+    _(ensures sensorstatus.syringeplaced == s_p)
+    _(ensures sensorstatus.levelhigh == l_h)
+    
+    wait(2); // Wait for micro-controller pins to initialize after power up
   
-    DigitalIn d_c(p5);
-    DigitalIn s_p(p6);
-    DigitalIn l_h(p7);
+    // Sensor pins need to configured as  digital inputs for initial check
+    DigitalIn d_c(p5); //Door sensor
+    DigitalIn s_p(p6); // Syringe sensor
+    DigitalIn l_h(p7); // Level sensor
     
 
-    
+    // Initial check of sensor pins
     if(!d_c)
         sensorstatus.doorclosed=false;
     else
@@ -882,19 +977,17 @@ int main()
     else
         sensorstatus.levelhigh=true;
     
+    // Sensor pins configured as interrupts after initial check
     InterruptIn Door_closed(p5);
     InterruptIn Syringe_placed(p6);
     InterruptIn Level_high(p7);
     
-   // pc.printf("Hello\n\r");
+    // Initialize the state machine to OFF STATE
+    pca_state.CurrentState=&OFFSTATE;
+    pca_state.PreviousState=&OFFSTATE;
+    smart_pca=&pca_state;
 
-    not_so_smart_pca.CurrentState=&OFFSTATE;
-    not_so_smart_pca.PreviousState=&OFFSTATE;
-    smart_pca=&not_so_smart_pca;
-    //smart_pca=(*TStateMachine)malloc(1000);
-    //pc.printf("Hello2:%s",smart_pca);
-
-    //smart_pca->CurrentState = OFFSTATE;
+    // Assign ISRs to the pins of microcontroller
     Door_closed.rise(&DoorClosed);
     Door_closed.fall(&DoorOpen);
     Syringe_placed.rise(&SyringePlaced);
@@ -909,14 +1002,6 @@ int main()
     down.rise(&Down);
     bolus.rise(&Bolus);
     load.rise(&Load);
-    
-    LED_YELLOW = 1;
-    LED_RED = 1;
-    wait(2);
-    LED_YELLOW = 0;
-    LED_RED = 0;
-    Intrpt = 1;
-    pc.printf("Hello\n\r");
     
     while(1);
 }
