@@ -15,6 +15,7 @@ DigitalOut LED_RED(LED2);
 DigitalOut LED_TEST(LED3);
 DigitalOut Intrpt(p25);
 
+// make the pin names symbolic
 //Interrupt pins
     InterruptIn Door_closed(p5);
     InterruptIn Syringe_placed(p6);
@@ -54,6 +55,8 @@ typedef struct StateMachine TStateMachine;
 typedef void (*StateProc)(TStateMachine *sm, Event input);
 TStateMachine *smart_pca;
 
+// If you are going to program in C++, the machine should include the transition functions,
+// since the machine pointer is essentially just *this.
 struct StateMachine
 {
     StateProc CurrentState;
@@ -70,7 +73,9 @@ struct status
 
 struct user_requirements
 {
+	// document these fields
     float   drug_concentration;
+	// why is this an int instead of an enum?
     int     mode_selected;
     float   pca_dosage;
     int     pca_lockout;
@@ -82,7 +87,7 @@ struct user_requirements
 }user_input;
 
 TStateMachine not_so_smart_pca;
-
+// put these in the machine class
 void OFFSTATE(TStateMachine *state, Event input);
 void CONC1(TStateMachine    *state, Event input);
 void CONC2(TStateMachine    *state, Event input);
