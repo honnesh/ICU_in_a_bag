@@ -947,20 +947,20 @@ void ERROR_LEVEL_STATE  (TStateMachine  *state, Event input)
 
 int main()
 {
-	// I suggest using symbolic names for your pin constants
+
 	// also, all of this should be encapsulated in an object representing the device
 
-    _(requires door sensor connected to pin 5 (p5))
-    _(requires syringe sensor connected to pin 6 (p6))
-    _(requires level sensor connected to pin 7 (p7))
-    _(requires On button of keypad connected to pin 8 (p8))
-    _(requires Off button of keypad connected to pin 9 (p9))
-    _(requires Back button of keypad connected to pin 10 (p10))
-    _(requires Enter button of keypad connected to pin 11 (p11))
-    _(requires Up button of keypad connected to pin 12 (p12))
-    _(requires Down button of keypad connected to pin 13 (p13))
-    _(requires Bolus input connected to pin 14 (p14))
-    _(requires load button of keypad connected to pin 15 (p15))
+    _(requires door sensor connected to pin 5 (DOOR_SENSE))
+    _(requires syringe sensor connected to pin 6 (SYRINGE_SENSE))
+    _(requires level sensor connected to pin 7 (LEVEL_SENSE))
+    _(requires On button of keypad connected to pin 8 (ON_BUTTON))
+    _(requires Off button of keypad connected to pin 9 (OFF_BUTTON))
+    _(requires Back button of keypad connected to pin 10 (NO_BUTTON))
+    _(requires Enter button of keypad connected to pin 11 (ENTER_BUTTON))
+    _(requires Up button of keypad connected to pin 12 (UP_BUTTON))
+    _(requires Down button of keypad connected to pin 13 (DOWN_BUTTON))
+    _(requires Bolus input connected to pin 14 (BOLUS_BUTTON))
+    _(requires load button of keypad connected to pin 15 (LOAD_BUTTON))
     
     _(ensures sensorstatus.doorclosed == d_c)
     _(ensures sensorstatus.syringeplaced == s_p)
@@ -969,9 +969,9 @@ int main()
     wait(2); // Wait for micro-controller pins to initialize after power up
   
     // Sensor pins need to configured as  digital inputs for initial check
-    DigitalIn d_c(p5); //Door sensor
-    DigitalIn s_p(p6); // Syringe sensor
-    DigitalIn l_h(p7); // Level sensor
+    DigitalIn d_c(DOOR_SENSE); //Door sensor
+    DigitalIn s_p(SYRINGE_SENSE); // Syringe sensor
+    DigitalIn l_h(LEVEL_SENSE); // Level sensor
     
 
     // Initial check of sensor pins
@@ -990,9 +990,9 @@ int main()
         sensorstatus.levelhigh=true;
     
     // Sensor pins configured as interrupts after initial check
-    InterruptIn Door_closed(p5);
-    InterruptIn Syringe_placed(p6);
-    InterruptIn Level_high(p7);
+    InterruptIn Door_closed(DOOR_SENSE);
+    InterruptIn Syringe_placed(SYRINGE_SENSE);
+    InterruptIn Level_high(LEVEL_SENSE);
     
     // Initialize the state machine to OFF STATE
     pca_state.CurrentState=&OFFSTATE;
