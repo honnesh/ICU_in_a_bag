@@ -4,7 +4,17 @@
 #define conc2                   5
 #define conc3                   10
 #define LockOutDefault          5
-
+#define DOOR_SENSE		p5
+#define SYRINGE_SENSE		p6
+#define LEVEL_SENSE		P7
+#define ON_BUTTON		P8
+#define OFF_BUTTON 		p9
+#define NO_BUTTON		P10
+#define ENTER_BUTTON 		p11
+#define UP_BUTTON		p12
+#define DOWN_BUTTON		p13
+#define BOLUS_BUTTON		p14
+#define LOAD_BUTTON		p15
 //Ticker
 Ticker pca_lockout_timer;
 Ticker pca_cont_lockout_timer;
@@ -17,17 +27,17 @@ DigitalOut Intrpt(p25);
 
 // make the pin names symbolic
 //Interrupt pins
-    InterruptIn Door_closed(p5);
-    InterruptIn Syringe_placed(p6);
-    InterruptIn Level_high(p7);
-    InterruptIn on(p8);
-    InterruptIn off(p9);
-    InterruptIn no(p10);
-    InterruptIn enter(p11);
-    InterruptIn up(p12);
-    InterruptIn down(p13);
-    InterruptIn bolus(p14);
-    InterruptIn load(p15);
+    InterruptIn Door_closed(DOOR_SENSE);
+    InterruptIn Syringe_placed(SYRINGE_SENSE);
+    InterruptIn Level_high(LEVEL_SENSE);
+    InterruptIn on(ON_BUTTON);
+    InterruptIn off(OFF_BUTTON);
+    InterruptIn no(NO_BUTTON);
+    InterruptIn enter(ENTER_BUTTON);
+    InterruptIn up(UP_BUTTON);
+    InterruptIn down(DOWN_BUTTON);
+    InterruptIn bolus(BOLUS_BUTTON);
+    InterruptIn load(LOAD_BUTTON);
     //InterruptIn timeout(p16);
 
 //Events
