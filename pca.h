@@ -121,4 +121,7 @@ void ERROR_DOOR_STATE(TStateMachine *state, Event input);
 void ERROR_SYRINGE_STATE(TStateMachine  *state, Event input);
 void ERROR_LEVEL_STATE  (TStateMachine  *state, Event input);
 void start_motor(struct user_requirements user_inputs);
+/*The function start_motor guarantees the delivery of right dosage of the medicine to the patient.
+structure user_inputs contains the dosage to be delivered which is used by the motor function to 
+determine the duration for the motor to be run */
 void stop_motor();
