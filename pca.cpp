@@ -150,6 +150,21 @@ void PCA_cont_lockout()
 /* ------------- MOTOR FUNCTIONS ----------------------- */
 void start_motor(struct user_requirements user_inputs)
 {
+	/* This code is a stub in place of actual motor code.
+	The actual function is intended to extract the dosage and other parameters from the
+	structure user_inputs passed to it and run till the dosage is delivered.
+	drug_concentration-->used by the motor to calculate the volume of the drug to be delivered;
+    	mode_selected--> reserved for future use;
+    	pca_dosage--> dosage to be delivered when in PCA mode, pca_dosage in conjunction with drug_concentration will determine
+    	the volume of the medicine to be delivered;
+    	pca_lockout--> reserved for future use;
+    	cont_rate--> dosage in CONTINUOUS mode;
+    	pca_cont_rate--> dosage in PCA + CONT mode;
+    	pca_cont_bolus_dosage--> additional dosage on bolus in PCA + CONT mode;
+    	pca_cont_lockout--> reserved for future use;
+    	bolus--> reserved for future use;
+    	The motor could use feedback from the flow sensor to continuously to check if the required quantity is deliverd
+    	or could precisely determine the number of turns of the motor and map it to the volume delivered*/
     switch(user_inputs.mode_selected)
     {
         case 1: LED_YELLOW = 1;
@@ -174,6 +189,8 @@ void start_motor(struct user_requirements user_inputs)
     
 void stop_motor()
 {
+    /*Stub function for the actual stop_motor code.
+    The stop_motor function is required to halt the motor to bring it to a stable state of rest*/
     LED_RED = 0;
     LED_YELLOW = 0;
 }
